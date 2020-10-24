@@ -125,7 +125,7 @@ class AdvGAN:
             perturbation = torch.clamp(self.netG(x), -tresh, tresh)
             adv_images = perturbation + x
             adv_images = torch.clamp(adv_images, self.box_min, self.box_max)
-            #FIXME models changed
+            
             self.optimizer_D.zero_grad()
             d_real_logits, d_real_probs = self.netDisc(x)
             d_fake_logits, d_fake_probs = self.netDisc(adv_images.detach())
@@ -204,10 +204,9 @@ class AdvGAN:
                 
                 # if targeted, create one hot vectors of the target
                 if self.is_targeted:
-                    targets = torch.zeros_like(labels) + target #FIXME
-                    # print(targets)
-                    # labels = torch.eye(self.model_num_labels, device=self.device)[targets] #onehot targets XXX
-                    # one hot labels создаются при тренировке на батче
+                    targets = torch.zeros_like(labels) + target 
+                    # commmented because labels will be converted to one hot during training on batch  
+                    # labels = torch.eye(self.model_num_labels, device=self.device)[targets] #onehot targets 
                     labels = targets
 
                 loss_D_batch, loss_G_fake_batch, loss_perturb_batch, loss_adv_batch, loss_G_batch, fake_acc_batch = \
