@@ -31,7 +31,7 @@ def find_last_checkpoint(model_file):
 
             if len(epochs) > 0:
                 # list is not ordered by epochs!
-                i = numpy.argmax(epochs)
+                i = np.argmax(epochs)
                 return os.path.join(base_directory, file_name + '.%d' % epochs[i])
 
 
@@ -93,7 +93,8 @@ class AdvGAN:
         if last_netG is not None:
             self.netG.load_state_dict(torch.load(last_netG))
             self.netDisc.load_state_dict(torch.load(last_netDisc))
-            *_, self.start_epoch = int(last_netG.split('.'))+1
+            *_, self.start_epoch = last_netG.split('.')
+            self.start_epoch = int(self.start_epoch)+1
         else:
             self.netG.apply(weights_init)
             self.netDisc.apply(weights_init)
