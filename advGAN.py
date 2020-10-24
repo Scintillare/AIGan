@@ -95,11 +95,11 @@ class AdvGAN:
         if last_netG is not None:
             self.netG.load_state_dict(torch.load(last_netG))
             self.netDisc.load_state_dict(torch.load(last_netDisc))
-            self.start_epoch = 1
+            *_, self.start_epoch = int(last_netG.split('.'))+1
         else:
             self.netG.apply(weights_init)
             self.netDisc.apply(weights_init)
-            *_, self.start_epoch = int(last_netG.split('.'))+1
+            self.start_epoch = 1
 
        # initialize optimizers
         self.optimizer_G = torch.optim.Adam(self.netG.parameters(),
