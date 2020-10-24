@@ -2,7 +2,7 @@ import torch
 import torchvision.datasets
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
-from advGAN import AdvGAN_Attack
+from advGAN import AdvGAN
 from models import MNIST_target_net
 
 use_cuda=True
@@ -25,7 +25,7 @@ model_num_labels = 10
 # MNIST train dataset and dataloader declaration
 mnist_dataset = torchvision.datasets.MNIST('./dataset', train=True, transform=transforms.ToTensor(), download=True)
 dataloader = DataLoader(mnist_dataset, batch_size=batch_size, shuffle=True, num_workers=1)
-advGAN = AdvGAN_Attack(device,
+advGAN = AdvGAN(device,
                           targeted_model,
                           model_num_labels,
                           image_nc,
