@@ -3,7 +3,7 @@ import torch.nn.functional as F
 
 # Discriminator - PatchGAN from pix2pix
 class Discriminator(nn.Module):
-    def __init__(self, image_nc):
+    def __init__(self, image_nc, model_num_classes):
         super(Discriminator, self).__init__()
         model = [
             #c8
@@ -20,7 +20,7 @@ class Discriminator(nn.Module):
         ]
         self.model = nn.Sequential(*model)
         # self.fc = nn.Linear(32*35*35, 5)
-        self.fc = nn.Linear(32*35*35, 1)
+        self.fc = nn.Linear(32*35*35, model_num_classes)
         self.prob = nn.Sigmoid()
 
     def forward(self, x):
