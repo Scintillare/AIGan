@@ -31,7 +31,7 @@ class MNIST_target_net(nn.Module):
 
 
 class Discriminator(nn.Module):
-    def __init__(self, image_nc):
+    def __init__(self, image_nc, model_num_classes):
         super(Discriminator, self).__init__()
         model = [
             #c8
@@ -48,12 +48,14 @@ class Discriminator(nn.Module):
         ]
         self.model = nn.Sequential(*model)
         # self.fc = nn.Linear(32*35*35, 5)
-        self.fc = nn.Linear(32*35*35, 1)
+        self.fc = nn.Linear(32*128, model_num_classes)
         self.prob = nn.Sigmoid()
 
     def forward(self, x):
         output = self.model(x).squeeze()
-        output = output.view(output.size(0), -1)
+        print(output.shape)
+        output = output.view(-1)
+        print(output.shape)
         logits = self.fc(output)
         probs = self.prob(logits)
         return logits, probs

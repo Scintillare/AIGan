@@ -10,10 +10,7 @@ import gc
 from models import Generator, Discriminator
 
 
-models_path = './models/'
-
-# model_file = '%s/adv_tr_classifier.pth.tar' % self.args.directory #
-
+# from confidence-calibrated-adversarial-training
 def find_last_checkpoint(model_file):
     base_directory = os.path.dirname(os.path.realpath(model_file))
     file_name = os.path.basename(model_file)
@@ -76,18 +73,19 @@ class AdvGAN:
         self.output_nc = output_nc
         self.box_min = box_min
         self.box_max = box_max
-
+        
+        self.models_path = './models/'
         self.writer = SummaryWriter('./checkpoints/advganlogs/', max_queue=100)
 
         self.gen_input_nc = image_nc
 
         self.netG = Generator(self.gen_input_nc, image_nc).to(device)
-        self.netDisc = Discriminator(image_nc).to(device)
-        self.netG_file_name = models_path + 'netG.pth.tar'
-        self.netDisc_file_name = models_path + 'netD.pth.tar'
+        self.netDisc = Discriminator(image_nc, self.model_num_labels).to(device)
+        self.netG_file_name = self.models_path + 'netG.pth.tar'
+        self.netDisc_file_name = self.models_path + 'netD.pth.tar'
 
-        if not os.path.exists(models_path):
-            os.makedirs(models_path)
+        if not os.path.exists(self.models_path):
+            os.makedirs(self.models_path)
 
         # initialize all weights
         last_netG = find_last_checkpoint(self.netG_file_name)
@@ -106,8 +104,8 @@ class AdvGAN:
                                             lr=0.001)
         self.optimizer_D = torch.optim.Adam(self.netDisc.parameters(),
                                             lr=0.001)
-        self.optG_file_name = models_path + 'optG.pth.tar'
-        self.optD_file_name = models_path + 'optD.pth.tar'
+        self.optG_file_name = self.models_path + 'optG.pth.tar'
+        self.optD_file_name = self.models_path + 'optD.pth.tar'
 
         last_optG = find_last_checkpoint(self.optG_file_name)
         last_optD = find_last_checkpoint(self.optD_file_name)
@@ -163,6 +161,7 @@ class AdvGAN:
             f_real_probs = F.softmax(f_real_logits, dim=1)
             f_fake_logits = self.model(adv_images)
             f_fake_probs = F.softmax(f_fake_logits, dim=1)
+            fake_accuracy = torch.mean((torch.argmax(f_fake_logits, 1) == labels).float())
             onehot_labels = torch.eye(self.model_num_labels, device=self.device)[labels.long()]
             loss_adv = adv_loss(f_fake_probs, onehot_labels, self.is_targeted)
 
@@ -173,7 +172,7 @@ class AdvGAN:
             loss_G.backward()
             self.optimizer_G.step()
 
-        return loss_D_GAN.item(), loss_G_fake.item(), loss_perturb.item(), loss_adv.item()
+        return loss_D_GAN.item(), loss_G_fake.item(), loss_perturb.item(), loss_adv.item(), loss_G.item(), fake_accuracy
 
     def train(self, train_dataloader, epochs,  target=-1):
         self.is_targeted = (True 
