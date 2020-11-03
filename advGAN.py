@@ -8,6 +8,8 @@ import os
 from torch.utils.tensorboard import SummaryWriter
 import gc
 from models import Generator, Discriminator
+from advertorch.attacks import LinfPGDAttack
+
 
 
 # from confidence-calibrated-adversarial-training
@@ -63,8 +65,10 @@ class AdvGAN:
                  model,
                  model_num_labels,
                  image_nc,
+                 epoch_of_change,
                  box_min,
-                 box_max):
+                 box_max
+                 is_targeted):
         output_nc = image_nc
         self.device = device
         self.model_num_labels = model_num_labels
@@ -73,11 +77,18 @@ class AdvGAN:
         self.output_nc = output_nc
         self.box_min = box_min
         self.box_max = box_max
+        self.is_targeted = is_targeted # TODO
         
         self.models_path = './models/'
         self.writer = SummaryWriter('./checkpoints/advganlogs/', max_queue=100)
 
         self.gen_input_nc = image_nc
+
+        self.epoch_of_change = epoch_of_change
+        self._use_attacker = True
+        self.attacker = LinfPGDAttack(self.model, loss_fn=nn.CrossEntropyLoss(reduction="sum"), eps=0.3,
+                nb_iter=40, eps_iter=0.01, rand_init=True, clip_min=box_min, clip_max=box_max,
+                targeted=self.is_targeted)
 
         self.netG = Generator(self.gen_input_nc, image_nc).to(device)
         self.netDisc = Discriminator(image_nc, self.model_num_labels).to(device)
@@ -107,6 +118,7 @@ class AdvGAN:
                                             lr=0.001)
         self.optG_file_name = self.models_path + 'optG.pth.tar'
         self.optD_file_name = self.models_path + 'optD.pth.tar'
+        # TODO atacker?
 
         last_optG = find_last_checkpoint(self.optG_file_name)
         last_optD = find_last_checkpoint(self.optD_file_name)
@@ -115,10 +127,10 @@ class AdvGAN:
             self.optimizer_D.load_state_dict((torch.load(last_optD)))
 
 
+
     def train_batch(self, x, labels):
-        m = 1
         # optimize D
-        for i in range(m):
+        for i in range(1):
             # add a clipping trick
             tresh = 0.3 
             perturbation = torch.clamp(self.netG(x), -tresh, tresh)
@@ -126,7 +138,13 @@ class AdvGAN:
             adv_images = torch.clamp(adv_images, self.box_min, self.box_max)
             
             self.optimizer_D.zero_grad()
-            d_real_logits, d_real_probs = self.netDisc(x)
+
+            if self._use_attacker:
+                pgd_images = self.attacker.perturb(x, labels) #FIXME targets
+                d_real_logits, d_real_probs = self.netDisc(pgd_images)
+            else:
+                d_real_logits, d_real_probs = self.netDisc(x) #FIXME
+           
             d_fake_logits, d_fake_probs = self.netDisc(adv_images.detach())
 
             # generate labels for discriminator (optionally smooth labels for stability)
@@ -143,7 +161,7 @@ class AdvGAN:
             self.optimizer_D.step()
 
         # optimize G
-        for i in range(m):
+        for i in range(1):
             self.optimizer_G.zero_grad()
 
             # cal G's loss in GAN
@@ -176,11 +194,14 @@ class AdvGAN:
         return loss_D_GAN.item(), loss_G_fake.item(), loss_perturb.item(), loss_adv.item(), loss_G.item(), fake_accuracy
 
     def train(self, train_dataloader, epochs,  target=-1):
+        # FIXME 
         self.is_targeted = (True 
                             if target in range(self.model_num_labels) 
                             else False)
 
         for epoch in range(self.start_epoch, epochs+1):
+            if epoch == self.epoch_of_change:
+                self._use_attacker = False
             if epoch == 50:
                 self.optimizer_G = torch.optim.Adam(self.netG.parameters(),
                                                     lr=0.0001)
