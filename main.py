@@ -18,19 +18,22 @@ if __name__ == "__main__":
     device = torch.device("cuda" if (use_cuda and torch.cuda.is_available()) else "cpu")
 
     pretrained_model = "./MNIST_target_model.pth"
-    targeted_model = MNIST_target_net().to(device)
-    targeted_model.load_state_dict(torch.load(pretrained_model))
-    targeted_model.eval()
+    target_model = MNIST_target_net().to(device)
+    target_model.load_state_dict(torch.load(pretrained_model))
+    target_model.eval()
     model_num_labels = 10
+    stop_epoch = 10
 
     # MNIST train dataset and dataloader declaration
     mnist_dataset = torchvision.datasets.MNIST('./dataset', train=True, transform=transforms.ToTensor(), download=True)
     dataloader = DataLoader(mnist_dataset, batch_size=batch_size, shuffle=True, num_workers=1, drop_last=True)
     advGAN = AdvGAN(device,
-                    targeted_model,
+                    target_model,
                     model_num_labels,
                     image_nc,
+                    stop_epoch,
                     BOX_MIN,
-                    BOX_MAX)
+                    BOX_MAX,
+                    is_targeted=False)
 
     advGAN.train(dataloader, epochs)

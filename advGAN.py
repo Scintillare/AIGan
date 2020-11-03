@@ -67,7 +67,7 @@ class AdvGAN:
                  image_nc,
                  epoch_of_change,
                  box_min,
-                 box_max
+                 box_max,
                  is_targeted):
         output_nc = image_nc
         self.device = device
@@ -195,9 +195,9 @@ class AdvGAN:
 
     def train(self, train_dataloader, epochs,  target=-1):
         # FIXME 
-        self.is_targeted = (True 
-                            if target in range(self.model_num_labels) 
-                            else False)
+        # self.is_targeted = (True 
+        #                     if target in range(self.model_num_labels) 
+        #                     else False)
 
         for epoch in range(self.start_epoch, epochs+1):
             if epoch == self.epoch_of_change:
