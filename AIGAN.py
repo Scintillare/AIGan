@@ -59,7 +59,7 @@ def adv_loss(probs_model, onehot_labels, is_targeted):
     # loss_adv = -F.mse_loss(logits_model, onehot_labels)
     # loss_adv = - F.cross_entropy(logits_model, labels)
 
-class AdvGAN:
+class AIGAN:
     def __init__(self,
                  device,
                  model,
@@ -77,10 +77,10 @@ class AdvGAN:
         self.output_nc = output_nc
         self.box_min = box_min
         self.box_max = box_max
-        self.is_targeted = is_targeted # TODO
+        self.is_targeted = is_targeted
         
         self.models_path = './models/'
-        self.writer = SummaryWriter('./checkpoints/advganlogs/', max_queue=100)
+        self.writer = SummaryWriter('./checkpoints/logs/', max_queue=100)
 
         self.gen_input_nc = image_nc
 
@@ -118,7 +118,6 @@ class AdvGAN:
                                             lr=0.001)
         self.optG_file_name = self.models_path + 'optG.pth.tar'
         self.optD_file_name = self.models_path + 'optD.pth.tar'
-        # TODO atacker?
 
         last_optG = find_last_checkpoint(self.optG_file_name)
         last_optD = find_last_checkpoint(self.optD_file_name)
@@ -129,6 +128,7 @@ class AdvGAN:
 
 
     def train_batch(self, x, labels):
+        # if training is targeted, labels = targets
         # optimize D
         for i in range(1):
             # add a clipping trick
@@ -140,10 +140,10 @@ class AdvGAN:
             self.optimizer_D.zero_grad()
 
             if self._use_attacker:
-                pgd_images = self.attacker.perturb(x, labels) #FIXME targets
+                pgd_images = self.attacker.perturb(x, labels) 
                 d_real_logits, d_real_probs = self.netDisc(pgd_images)
             else:
-                d_real_logits, d_real_probs = self.netDisc(x) #FIXME
+                d_real_logits, d_real_probs = self.netDisc(x) 
            
             d_fake_logits, d_fake_probs = self.netDisc(adv_images.detach())
 
@@ -180,25 +180,22 @@ class AdvGAN:
             f_real_probs = F.softmax(f_real_logits, dim=1)
             f_fake_logits = self.model(adv_images)
             f_fake_probs = F.softmax(f_fake_logits, dim=1)
+            # if training is targeted, indicate how many examples classified as targets
+            # else show accuraccy on adversarial images
             fake_accuracy = torch.mean((torch.argmax(f_fake_logits, 1) == labels).float())
             onehot_labels = torch.eye(self.model_num_labels, device=self.device)[labels.long()]
             loss_adv = adv_loss(f_fake_probs, onehot_labels, self.is_targeted)
 
             alambda = 10
-            alpha = 1.#1.0
-            beta = 5.#5.0
+            alpha = 1.
+            beta = 5.
             loss_G = alambda*loss_adv + alpha*loss_G_fake + beta*loss_perturb
             loss_G.backward()
             self.optimizer_G.step()
 
         return loss_D_GAN.item(), loss_G_fake.item(), loss_perturb.item(), loss_adv.item(), loss_G.item(), fake_accuracy
 
-    def train(self, train_dataloader, epochs,  target=-1):
-        # FIXME 
-        # self.is_targeted = (True 
-        #                     if target in range(self.model_num_labels) 
-        #                     else False)
-
+    def train(self, train_dataloader, epochs):
         for epoch in range(self.start_epoch, epochs+1):
             if epoch == self.epoch_of_change:
                 self._use_attacker = False
@@ -223,12 +220,14 @@ class AdvGAN:
                 images, labels = data
                 images, labels = images.to(self.device), labels.to(self.device)
                 
-                # if targeted, create one hot vectors of the target
-                if self.is_targeted:
-                    targets = torch.zeros_like(labels) + target 
-                    # commmented because labels will be converted to one hot during training on batch  
-                    # labels = torch.eye(self.model_num_labels, device=self.device)[targets] #onehot targets 
-                    labels = targets
+                # # if targeted, create one hot vectors of the target
+                # if self.is_targeted:
+                #     assert(targets is not None)
+                #     # this statement can be used when all targets is equal
+                #     # targets = torch.zeros_like(labels) + target 
+                #     # commmented because labels will be converted to one hot during training on batch  
+                #     # labels = torch.eye(self.model_num_labels, device=self.device)[targets] #onehot targets 
+                #     labels = targets
 
                 loss_D_batch, loss_G_fake_batch, loss_perturb_batch, loss_adv_batch, loss_G_batch, fake_acc_batch = \
                     self.train_batch(images, labels)
@@ -241,9 +240,9 @@ class AdvGAN:
                 if i == len(train_dataloader)-2:
                     perturbation = self.netG(images)
                     self.writer.add_images('train/adversarial_perturbation_1', perturbation, global_step=epoch)
-                    self.writer.add_images('train/adversarial_perturbation', 10*perturbation, global_step=epoch)
+                    # self.writer.add_images('train/adversarial_perturbation', 10*perturbation, global_step=epoch)
                     self.writer.add_images('train/adversarial_images', images+perturbation, global_step=epoch)
-                    self.writer.add_images('train/adversarial_images_cl2', torch.clamp(images+perturbation, 0, 1), global_step=epoch)
+                    # self.writer.add_images('train/adversarial_images_cl2', torch.clamp(images+perturbation, 0, 1), global_step=epoch)
 
 
             # print statistics

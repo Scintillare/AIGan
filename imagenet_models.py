@@ -47,10 +47,7 @@ class Discriminator(nn.Module):
 #     return nn.Sequential(*deconv_block)
 
 class Generator(nn.Module):
-    '''
-	Generator definition for AdvGAN
-	ref: https://arxiv.org/pdf/1801.02610.pdf
-    '''
+    
     def __init__(self,
                  gen_input_nc,
                  image_nc,
