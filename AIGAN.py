@@ -240,9 +240,9 @@ class AIGAN:
                 if i == len(train_dataloader)-2:
                     perturbation = self.netG(images)
                     self.writer.add_images('train/adversarial_perturbation_1', perturbation, global_step=epoch)
-                    # self.writer.add_images('train/adversarial_perturbation', 10*perturbation, global_step=epoch)
+                    self.writer.add_images('train/adversarial_perturbation', 10*perturbation, global_step=epoch)
                     self.writer.add_images('train/adversarial_images', images+perturbation, global_step=epoch)
-                    # self.writer.add_images('train/adversarial_images_cl2', torch.clamp(images+perturbation, 0, 1), global_step=epoch)
+                    self.writer.add_images('train/adversarial_images_cl2', torch.clamp(images+perturbation, 0, 1), global_step=epoch)
 
 
             # print statistics
