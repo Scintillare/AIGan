@@ -9,7 +9,7 @@ Code is based on mathcbc/advGAN_pytorch and ctargon/AdvGAN-tf with my modificati
 python3 train_target_model.py
 ```
 
-## training the advGAN
+## training the AIGAN
 
 ```shell
 python3 main.py
