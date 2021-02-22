@@ -45,6 +45,7 @@ if __name__ == "__main__":
     target_model.eval()
 
     # MNIST test dataset
+
     mnist_dataset_test = torchvision.datasets.MNIST('./dataset', train=False, transform=transforms.ToTensor(), download=True)
     test_dataloader = DataLoader(mnist_dataset_test, batch_size=batch_size, shuffle=True, num_workers=1)
     num_correct = 0

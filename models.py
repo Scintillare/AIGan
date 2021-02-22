@@ -1,6 +1,19 @@
 import torch.nn as nn
 import torch.nn.functional as F
+import torch
+from activations import *
+from torchvision import models
 
+
+def get_resnet18(num_classes):
+    model = models.resnet18(pretrained=True)
+    n_inputs = model.fc.in_features
+    model.fc = nn.Sequential(
+        nn.Linear(n_inputs, 256), nn.ReLU(), nn.Dropout(0.2),
+        nn.Linear(256, num_classes))#, nn.LogSoftmax(dim=1))
+    #instead normalization prepend batchnorm
+    model = nn.Sequential(nn.BatchNorm2d(num_features=3, affine=False), model)
+    return model
 
 # Target Model definition
 class MNIST_target_net(nn.Module):
@@ -31,32 +44,39 @@ class MNIST_target_net(nn.Module):
 
 
 class Discriminator(nn.Module):
-    def __init__(self, image_nc, model_num_classes):
+    def __init__(self, image_nc):
         super(Discriminator, self).__init__()
         model = [
             #c8
             nn.Conv2d(image_nc, 8, kernel_size=4, stride=2, padding=0, bias=True),
-            nn.LeakyReLU(0.2),
+            nn.LeakyReLU(0.2, inplace=True),
+            # AReLU(),
+            # Rational(),
+            # Swish(),
             # c16
-            nn.Conv2d(8, 16, kernel_size=4, stride=2, padding=0, bias=True),
+            nn.Conv2d(8, 16, kernel_size=4, stride=2, padding=0, bias=False),
             nn.InstanceNorm2d(16),
-            nn.LeakyReLU(0.2),
+            nn.LeakyReLU(0.2, inplace=True),
+            # AReLU(),
+            # Rational(),
+            # Swish(),
             # c32
-            nn.Conv2d(16, 32, kernel_size=4, stride=2, padding=0, bias=True),
+            nn.Conv2d(16, 32, kernel_size=4, stride=2, padding=0, bias=False),
             nn.InstanceNorm2d(32),
-            nn.LeakyReLU(0.2),
+            nn.LeakyReLU(0.2, inplace=True),
+            # AReLU(),
+            # Rational(),     
+            # Swish(),       
+
+            nn.Conv2d(32, 1, 1, bias=True),
         ]
         self.model = nn.Sequential(*model)
-        # self.fc = nn.Linear(32*35*35, 5)
-        self.fc = nn.Linear(32*128, model_num_classes)
         self.prob = nn.Sigmoid()
 
     def forward(self, x):
-        output = self.model(x).squeeze()
-        output = output.view(-1)
-        logits = self.fc(output)
-        probs = self.prob(logits)
-        return logits, probs
+        output = self.model(x).squeeze() 
+        probs = self.prob(output)
+        return output, probs
 
 
 class Generator(nn.Module):
@@ -71,14 +91,26 @@ class Generator(nn.Module):
             nn.Conv2d(gen_input_nc, 8, kernel_size=3, stride=1, padding=0, bias=True),
             nn.InstanceNorm2d(8),
             nn.ReLU(),
+            # nn.LeakyReLU(0.2, inplace=True),
+            # AReLU(),
+            # Rational(),
+            # Swish(),
             # 8*26*26
             nn.Conv2d(8, 16, kernel_size=3, stride=2, padding=0, bias=True),
             nn.InstanceNorm2d(16),
             nn.ReLU(),
+            # nn.LeakyReLU(0.2, inplace=True),
+            # AReLU(),
+            # Rational(),
+            # Swish(),
             # 16*12*12
             nn.Conv2d(16, 32, kernel_size=3, stride=2, padding=0, bias=True),
             nn.InstanceNorm2d(32),
             nn.ReLU(),
+            # nn.LeakyReLU(0.2, inplace=True),
+            # AReLU(),
+            # Rational(),
+            # Swish(),
             # 32*5*5
         ]
 
@@ -91,10 +123,20 @@ class Generator(nn.Module):
             nn.ConvTranspose2d(32, 16, kernel_size=3, stride=2, padding=0, bias=False),
             nn.InstanceNorm2d(16),
             nn.ReLU(),
+            # nn.LeakyReLU(0.2, inplace=True),
+            # AReLU(),
+            # Rational(),
+            # Swish(),
+
             # state size. 16 x 11 x 11
             nn.ConvTranspose2d(16, 8, kernel_size=3, stride=2, padding=0, bias=False),
             nn.InstanceNorm2d(8),
             nn.ReLU(),
+            # nn.LeakyReLU(0.2, inplace=True),
+            # AReLU(),
+            # Rational(),
+            # Swish(),
+
             # state size. 8 x 23 x 23
             nn.ConvTranspose2d(8, image_nc, kernel_size=6, stride=1, padding=0, bias=False),
             nn.Tanh()
@@ -109,7 +151,7 @@ class Generator(nn.Module):
         x = self.encoder(x)
         x = self.bottle_neck(x)
         x = self.decoder(x)
-        return x
+        return x 
 
 
 # Define a resnet block

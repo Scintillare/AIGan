@@ -6,6 +6,7 @@ import models
 from models import MNIST_target_net
 
 
+
 if __name__ == "__main__":
     
     use_cuda=True
