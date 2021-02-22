@@ -1,0 +1,55 @@
+absl-py==0.9.0
+advertorch==0.2.3
+astroid==2.2.5
+certifi==2020.12.5
+cloudpickle @ file:///home/conda/feedstock_root/build_artifacts/cloudpickle_1588164361239/work
+colorama==0.4.1
+cycler==0.10.0
+cytoolz==0.10.1
+dask @ file:///home/conda/feedstock_root/build_artifacts/dask-core_1588975274559/work
+decorator==4.4.2
+flake8==3.8.4
+future==0.18.2
+grpcio==1.23.0
+imagecodecs-lite==2019.12.3
+imageio==2.8.0
+importlib-metadata==2.0.0
+isort==4.3.21
+joblib @ file:///home/conda/feedstock_root/build_artifacts/joblib_1589812474002/work
+kiwisolver==1.2.0
+lazy-object-proxy==1.4.2
+Markdown @ file:///home/conda/feedstock_root/build_artifacts/markdown_1589366472132/work
+matplotlib==3.2.1
+mccabe==0.6.1
+mkl-service==2.3.0
+networkx==2.4
+numpy @ file:///D:/bld/numpy_1588605187257/work
+olefile==0.46
+Pillow==7.1.2
+protobuf==3.11.4
+pycodestyle==2.6.0
+pyflakes==2.2.0
+pylint==2.3.1
+pyparsing==2.4.7
+pyreadline==2.1
+python-dateutil==2.8.1
+PyWavelets==1.1.1
+scikit-image==0.17.2
+scikit-learn==0.22.2.post1
+scipy==1.3.2
+Shapely==1.7.0
+six==1.12.0
+tensorboard==2.0.0
+tifffile @ file:///home/conda/feedstock_root/build_artifacts/tifffile_1589323165428/work
+toolz==0.10.0
+torch==1.5.0
+torchsummary==1.5.1
+torchvision==0.6.0
+tornado==6.0.4
+tqdm @ file:///home/conda/feedstock_root/build_artifacts/tqdm_1588513834538/work
+typed-ast==1.4.0
+Werkzeug==1.0.1
+wget==3.2
+wincertstore==0.2
+wrapt==1.11.2
+zipp==3.4.0
