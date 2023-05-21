@@ -3,7 +3,7 @@ import torchvision.datasets
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
 import torch.nn.functional as F
-from models import  MNIST_target_net
+from models import MNIST_target_net
 
 
 if __name__ == "__main__":
