@@ -15,6 +15,42 @@ def get_resnet18(num_classes):
     model = nn.Sequential(nn.BatchNorm2d(num_features=3, affine=False), model)
     return model
 
+    
+# https://www.kaggle.com/code/shadabhussain/cifar-10-cnn-using-pytorch
+class CIFAR_target_net(nn.Module):
+    def __init__(self):
+        super(CIFAR_target_net, self).__init__()
+        self.network = nn.Sequential(
+            nn.Conv2d(3, 32, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2), # output: 64 x 16 x 16
+
+            nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(128, 128, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2), # output: 128 x 8 x 8
+
+            nn.Conv2d(128, 256, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(256, 256, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2), # output: 256 x 4 x 4
+
+            nn.Flatten(), 
+            nn.Linear(256*4*4, 1024),
+            nn.ReLU(),
+            nn.Linear(1024, 512),
+            nn.ReLU(),
+            nn.Linear(512, 10))
+
+    def forward(self, x):
+        return self.network(x)
+
+
+
 # Target Model definition
 class MNIST_target_net(nn.Module):
     def __init__(self):
@@ -153,6 +189,82 @@ class Generator(nn.Module):
         x = self.decoder(x)
         return x 
 
+class GeneratorNoTrans(nn.Module):
+    def __init__(self,
+                 gen_input_nc,
+                 image_nc,
+                 ):
+        super(GeneratorNoTrans, self).__init__()
+
+        encoder_lis = [
+            # MNIST:1*28*28
+            nn.Conv2d(gen_input_nc, 8, kernel_size=3, stride=1, padding=0, bias=True),
+            nn.InstanceNorm2d(8),
+            nn.ReLU(),
+            # nn.LeakyReLU(0.2, inplace=True),
+            # AReLU(),
+            # Rational(),
+            # Swish(),
+            # 8*26*26
+            nn.Conv2d(8, 16, kernel_size=3, stride=2, padding=0, bias=True),
+            nn.InstanceNorm2d(16),
+            nn.ReLU(),
+            # nn.LeakyReLU(0.2, inplace=True),
+            # AReLU(),
+            # Rational(),
+            # Swish(),
+            # 16*12*12
+            nn.Conv2d(16, 32, kernel_size=3, stride=2, padding=0, bias=True),
+            nn.InstanceNorm2d(32),
+            nn.ReLU(),
+            # nn.LeakyReLU(0.2, inplace=True),
+            # AReLU(),
+            # Rational(),
+            # Swish(),
+            # 32*5*5
+        ]
+
+        bottle_neck_lis = [ResnetBlock(32),
+                       ResnetBlock(32),
+                       ResnetBlock(32),
+                       ResnetBlock(32),]
+
+        decoder_lis = [
+            nn.ConvTranspose2d(32, 16, kernel_size=3, stride=1, padding=0, bias=False),
+            nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
+            nn.InstanceNorm2d(16),
+            nn.ReLU(),
+            # nn.LeakyReLU(0.2, inplace=True),
+            # AReLU(),
+            # Rational(),
+            # Swish(),
+
+            # state size. 16 x 11 x 11
+            nn.ConvTranspose2d(16, 8, kernel_size=3, stride=1, padding=1, bias=False),
+            nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
+            nn.InstanceNorm2d(8),
+            nn.ReLU(),
+            # nn.LeakyReLU(0.2, inplace=True),
+            # AReLU(),
+            # Rational(),
+            # Swish(),
+
+            # state size. 8 x 23 x 23
+            nn.Conv2d(8, image_nc, kernel_size=3, stride=1, padding=1, bias=False),
+            nn.Tanh()
+            # state size. image_nc x 28 x 28
+        ]
+
+        self.encoder = nn.Sequential(*encoder_lis)
+        self.bottle_neck = nn.Sequential(*bottle_neck_lis)
+        self.decoder = nn.Sequential(*decoder_lis)
+
+    def forward(self, x):
+        x = self.encoder(x)
+        x = self.bottle_neck(x)
+        x = self.decoder(x)
+        return x 
+    
 
 # Define a resnet block
 # modified from https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix/blob/master/models/networks.py

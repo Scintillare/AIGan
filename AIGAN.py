@@ -93,7 +93,9 @@ class AIGAN:
                 targeted=self.is_targeted)
 
         if dataset_name=="mnist":
-            from models import Generator, Discriminator
+            # from models import Generator, Discriminator
+            from models import Discriminator
+            from models import GeneratorNoTrans as Generator
         elif dataset_name=="imagenet":
             from imagenet_models import PatchDiscriminator as Discriminator
             from imagenet_models import Resnet224Generator as Generator
@@ -174,10 +176,9 @@ class AIGAN:
             
             # discriminator loss
             loss_D_real = F.mse_loss(d_real_probs, d_labels_real)
-            loss_D_real.backward()
             loss_D_fake = F.mse_loss(d_fake_probs, d_labels_fake)
-            loss_D_fake.backward()
             loss_D_GAN = (loss_D_fake + loss_D_real) #/2
+            loss_D_GAN.backward()
             # loss_D_GAN.backward()
             self.optimizer_D.step()
         
@@ -212,7 +213,7 @@ class AIGAN:
             if self.dataset_name == "mnist":
                 alambda = 1.
                 alpha = 1.
-                beta = 1.5
+                beta = 10
             elif self.dataset_name == "imagenet":
                 alambda = 10.0#
                 alpha = 1.
@@ -288,11 +289,15 @@ class AIGAN:
                 loss_adv_sum += loss_adv_batch
                 loss_G_sum += loss_G_batch
                 fake_acc_sum += fake_acc_batch
-                if i == len(train_dataloader)-2:
+                # if i == len(train_dataloader)-2:
+                if i % 50 == 0:
                     perturbation = self.netG(images)
-                    self.writer.add_images('train/adversarial_perturbation', perturbation, global_step=epoch)
-                    self.writer.add_images('train/adversarial_images', images+perturbation, global_step=epoch)
-                    self.writer.add_images('train/adversarial_images_cl', torch.clamp(images+perturbation, self.box_min, self.box_max), global_step=epoch)
+                    self.writer.add_images('train/adversarial_perturbation', perturbation, global_step=epoch*len(train_dataloader)+i)
+                    self.writer.add_images('train/adversarial_images', images+perturbation, global_step=epoch*len(train_dataloader)+i)
+                    self.writer.add_images('train/adversarial_images_cl', torch.clamp(images+perturbation, self.box_min, self.box_max), global_step=epoch*len(train_dataloader)+i)
+                    # self.writer.add_images('train/adversarial_perturbation', perturbation, global_step=epoch)
+                    # self.writer.add_images('train/adversarial_images', images+perturbation, global_step=epoch)
+                    # self.writer.add_images('train/adversarial_images_cl', torch.clamp(images+perturbation, self.box_min, self.box_max), global_step=epoch)
 
 
             # print statistics

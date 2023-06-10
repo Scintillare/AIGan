@@ -381,3 +381,5 @@ $RECYCLE.BIN/
 *.pth
 /dataset
 /assets
+/checkpoints
+/models
